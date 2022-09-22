@@ -2,11 +2,26 @@ const database = require('../models');
 
 class PessoaController
 {
+    static async getActivePersons(req, res)
+    {
+        try
+        {
+            const activePersons = await database.Pessoas.findAll()
+            return res.status(200).json(activePersons)
+
+        }catch(error)
+        {
+
+            res.status(500).json(error.message)
+        }
+    }
+
+
     static async getAllPersons(req, res)
     {
         try
         {
-            const allPersons = await database.Pessoas.findAll()
+            const allPersons = await database.Pessoas.scope('todos').findAll()
             return res.status(200).json(allPersons)
 
         }catch(error)
@@ -77,9 +92,67 @@ class PessoaController
         }
     }
 
+    static async restorePerson(req, res)
+    {
+        const {id} = req.params
+
+        try
+        {
+            await database.Pessoas.restore({where:{id: Number(id)}})
+            return res.status(200).json({mensagem : `id ${id} restaurado`})
+
+        }catch(error)
+        {
+            res.status(500).json(error.message)
+
+        }
+    }
+
+    static async getRegistration(req, res)
+    {
+        const {estudanteId}= req.params
+
+        try
+        {   
+            const person = await database.Pessoas.findOne({ where: {id: Number(estudanteId)}})
+            const registration = await person.getAulasMatriculadas()
+            return res.status(200).json(registration)  
+
+        }catch(error)
+        {   
+            return res.status(500).json(error.message)
+
+        }
+    }
+
+    static async getRegistrationByClass(req, res)
+    {
+        const {turmaId}= req.params
+
+        try
+        {   
+           const allRegistration = await database.Matriculas
+           .findAndCountAll(
+            {where:{
+                turma_id: Number(turmaId),
+                status : 'confirmado'    
+            },
+            limit:20,
+            order : [['estudante_id', 'ASC']]
+        })
+            return res.status(200).json(allRegistration) 
+        }catch(error)
+        {   
+            return res.status(500).json(error.message)
+
+        }
+    }
+
+
     static async getOneRegistration(req, res)
     {
         const {studentId,registrationId} = req.params
+
         try
         {
             const oneRegistration = await database.Matriculas.findOne({where:
