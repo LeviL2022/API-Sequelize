@@ -1,225 +1,99 @@
-const database = require('../models');
+const { PessoasServices } = require('../services')
+const pessoasServices = new PessoasServices()
 
-class PessoaController
-{
-    static async getActivePersons(req, res)
-    {
-        try
-        {
-            const activePersons = await database.Pessoas.findAll()
-            return res.status(200).json(activePersons)
-
-        }catch(error)
-        {
-
-            res.status(500).json(error.message)
-        }
+class PessoaController {
+  static async pegaPessoasAtivas(req, res){  
+    try {
+      const pessoasAtivas = await pessoasServices.pegaRegistrosAtivos()
+      return res.status(200).json(pessoasAtivas)  
+    } catch (error) {
+      return res.status(500).json(error.message)
     }
+  }
 
-
-    static async getAllPersons(req, res)
-    {
-        try
-        {
-            const allPersons = await database.Pessoas.scope('todos').findAll()
-            return res.status(200).json(allPersons)
-
-        }catch(error)
-        {
-
-            res.status(500).json(error.message)
-        }
+  static async pegaTodasAsPessoas(req, res){  
+    try {
+      const todasAsPessoas = await pessoasServices.pegaTodosOsRegistros()
+      return res.status(200).json(todasAsPessoas)  
+    } catch (error) {
+      return res.status(500).json(error.message)
     }
+  }
 
-    static async getOnePerson(req, res)
-    {
-        const {id} = req.params
-        try
-        {
-            const onePerson = await database.Pessoas.findOne({where:{id: Number (id) }})
-            return res.status(200).json(onePerson)
-
-        }catch(error)
-        {
-
-            return res.status(500).json(error.message)
-        }
+  static async pegaPessoa(req, res) {  
+    const { id } = req.params
+    try {
+      const pessoa = await pessoasServices.pegaUmRegistro({ id })
+      return res.status(200).json(pessoa)
+    } catch (error) {
+      return res.status(500).json(error.message)
     }
+  }
 
-    static async createPerson(req, res)
-    {   
-        const newPerson = req.body
-        try
-        {   
-            const newPersonCreated = await database.Pessoas.create(newPerson)
-            return res.status(200).json(newPersonCreated)
-
-        }catch(error)
-        {
-            return res.status(500).send(error.message)
-        }
+  static async criaPessoa(req, res) {  
+    const novaPessoa = req.body
+    try {
+      const novaPessoaCriada = await pessoasServices.criaRegistro(novaPessoa)
+      return res.status(200).json(novaPessoaCriada)
+    } catch (error) {
+      return res.status(500).json(error.message)
     }
+  }
 
-    static async updatePerson(req, res)
-    {
-        const {id} = req.params
-        const infos = req.body
-
-        try
-        {
-            await database.Pessoas.update(infos,{where:{id: Number (id) }})
-            const personUpdated = await database.Pessoas.findOne({where:{id:Number(id)}})
-            return res.status(200).json(personUpdated)
-
-        }catch(error)
-        {
-            return res.status(500).send(error.message)
-        }
+  static async atualizaPessoa(req, res) {  
+    const { id } = req.params
+    const novasInfos = req.body
+    try {
+      await pessoasServices.atualizaRegistro(novasInfos, Number(id))
+      return res.status(200).json({ mensagem: `id ${id} atualizado` })
+    } catch (error) {
+      return res.status(500).json(error.message)
     }
+  }
 
-    static async excludePerson(req, res)
-    {
-        const {id} = req.params
-
-        try
-        {
-            await database.Pessoas.destroy({where:{id:Number(id)}})
-            return res.status(200).json({mensagem:`id ${id} excluido`})
-
-        }catch(error)
-        {   
-            res.status(500).json(error.message)
-        }
+  static async apagaPessoa(req, res) {  
+    const { id } = req.params
+    try {
+      await pessoasServices.apagaRegistro(Number(id))
+      return res.status(200).json({ mensagem: `id ${id} deletado` })
+    } catch (error) {
+      return res.status(500).json(error.message)
     }
+  }
 
-    static async restorePerson(req, res)
-    {
-        const {id} = req.params
-
-        try
-        {
-            await database.Pessoas.restore({where:{id: Number(id)}})
-            return res.status(200).json({mensagem : `id ${id} restaurado`})
-
-        }catch(error)
-        {
-            res.status(500).json(error.message)
-
-        }
+  static async restauraPessoa(req, res) {  
+    const { id } = req.params
+    try {
+      const registroRestaurado = await pessoasServices
+        .restauraRegistro(Number(id))
+      return res.status(200).json(registroRestaurado)
+    } catch (error) {
+      return res.status(500).json(error.message)
     }
+  }
 
-    static async getRegistration(req, res)
-    {
-        const {estudanteId}= req.params
-
-        try
-        {   
-            const person = await database.Pessoas.findOne({ where: {id: Number(estudanteId)}})
-            const registration = await person.getAulasMatriculadas()
-            return res.status(200).json(registration)  
-
-        }catch(error)
-        {   
-            return res.status(500).json(error.message)
-
-        }
+  static async pegaMatriculas(req, res) {  
+    const { estudanteId } = req.params
+    try {
+      const matriculas = await pessoasServices
+        .pegaMatriculasPorEstudante({ id: Number(estudanteId) })
+      return res.status(200).json(matriculas)
+    } catch (error) {
+      return res.status(500).json(error.message)
     }
+  }
 
-    static async getRegistrationByClass(req, res)
-    {
-        const {turmaId}= req.params
-
-        try
-        {   
-           const allRegistration = await database.Matriculas
-           .findAndCountAll(
-            {where:{
-                turma_id: Number(turmaId),
-                status : 'confirmado'    
-            },
-            limit:20,
-            order : [['estudante_id', 'ASC']]
-        })
-            return res.status(200).json(allRegistration) 
-        }catch(error)
-        {   
-            return res.status(500).json(error.message)
-
-        }
+  static async cancelaPessoa(req, res) {  
+    const { estudanteId } = req.params
+    try {
+      await pessoasServices.cancelaPessoaEMatriculas(Number(estudanteId))
+      return res
+        .status(200)
+        .json({message: `matrículas ref. estudante ${estudanteId} canceladas`}) 
+    } catch (error) {
+      return res.status(500).json(error.message)
     }
-
-
-    static async getOneRegistration(req, res)
-    {
-        const {studentId,registrationId} = req.params
-
-        try
-        {
-            const oneRegistration = await database.Matriculas.findOne({where:
-                {id: Number (registrationId),
-                estudante_id : Number(studentId)
-                }})
-            return res.status(200).json(oneRegistration)
-
-        }catch(error)
-        {
-
-            return res.status(500).json(error.message)
-        }
-    }
-
-    static async createRegistration(req, res)
-    {   
-        const {studentId} = req.params
-        const newRegistration = {...req.body, estudante_id: Number(studentId)}
-
-        try
-        {   
-            const newRegistrationCreated = await database.Matriculas.create(newRegistration)
-            return res.status(200).json(newRegistrationCreated)
-
-        }catch(error)
-        {
-            return res.status(500).send(error.message)
-        }
-    }
-
-    static async updateRegistration(req, res)
-    {
-        const {studentId,registrationId} = req.params
-        const infos = req.body
-
-        try
-        {
-            await database.Matriculas.update(infos,{where:
-                {id: Number (registrationId),
-                estudante_id : Number(studentId)
-                }})
-            const registrationUpdated = await database.Matriculas.findOne({where:
-                {id:Number(registrationId)}})
-            return res.status(200).json(registrationUpdated)
-
-        }catch(error)
-        {
-            return res.status(500).send(error.message)
-        }
-    }
-
-    static async excludeRegistration(req, res)
-    {
-        const {studentId,registrationId} = req.params
-
-        try
-        {
-            await database.Matriculas.destroy({where:{id:Number(registrationId)}})
-            return res.status(200).json({mensagem:`id ${registrationId} excluido`})
-
-        }catch(error)
-        {   
-            res.status(500).json(error.message)
-        }
-    }
-
+  }
 }
 
-module.exports = PessoaController;
+module.exports = PessoaController
