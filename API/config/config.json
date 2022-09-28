@@ -1,8 +1,8 @@
 {
   "development": {
-    "username": "devman@localhost",
-    "password": "admin1234",
-    "database": "escola_ingles",
+    "username": "Yourserver@localhost",
+    "password": "0000",
+    "database": "database_test",
     "host": "127.0.0.1",
     "dialect": "mysql"
   },
